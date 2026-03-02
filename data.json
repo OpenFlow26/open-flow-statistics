@@ -67,6 +67,23 @@
       "stopHit": true,
       "qualityScore": 42,
       "note": "Stop hit."
-    }
+    },
+     {
+      "id": "2026-03-2_1529_01",
+      "timestampISO": "2026-03-28T15:29:30+01:00",
+      "direction": "LONG",
+      "instrument": "NASDAQ CFD",
+      "timeframe": "5m",
+      "entryPrice": 24596.0,
+      "exitPrice": 24700.0,
+      "stopPrice": 24540.0,
+      "targetPrice": 24700.0,
+      "durationMin": 6,
+      "pnlPoints": -30,
+      "maePoints": -35,
+      "mfePoints": 12,
+      "stopHit": true,
+      "qualityScore": 42,
+      "note": "Stop hit."
   ]
 }
