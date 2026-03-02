@@ -1,56 +1,148 @@
 
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>Open Flow Dashboard</title>
-<style>
-body { font-family: Arial; background:#0f172a; color:white; padding:40px; }
-.card { background:#1e293b; padding:20px; border-radius:10px; margin-bottom:20px; }
-.green { color:#22c55e; }
-.red { color:#ef4444; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Session Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
+  <a class="skip-link" href="#main">Salta al contenuto</a>
 
-<h1>📊 Open Flow Performance Dashboard</h1>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="brand-title">Session Dashboard</div>
+        <div class="brand-subtitle">Registro sessioni + metriche oggettive (verificabili su grafico)</div>
+      </div>
+    </div>
 
-<div class="card">
-<h2>Version</h2>
-<p id="version"></p>
-<p id="updated"></p>
-</div>
+    <div class="meta" id="metaBar" aria-live="polite">
+      <!-- injected -->
+    </div>
+  </header>
 
-<div class="card">
-<h2>Last Session</h2>
-<p id="date"></p>
-<p id="decision"></p>
-<p id="mae"></p>
-<p id="mfe"></p>
-</div>
+  <main id="main" class="container">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>Trasparenza in 10 secondi</h1>
+        <p class="muted">
+          Ogni sessione mostra <strong>data/ora (timezone)</strong>, <strong>LONG/SHORT</strong>,
+          <strong>entry/exit</strong>, stop/target e metriche (PnL, MAE/MFE).
+          Se vuoi, puoi controllare sul grafico.
+        </p>
 
-<script>
-fetch('data.json')
-.then(response => response.json())
-.then(data => {
+        <div class="kpis" id="kpis">
+          <!-- injected -->
+        </div>
+      </div>
 
-document.getElementById('version').innerText = "Version: " + data.currentVersion;
-document.getElementById('updated').innerText = "Last Updated: " + data.lastUpdated;
+      <div class="hero-right">
+        <div class="card spotlight" id="lastSessionCard" aria-live="polite">
+          <!-- injected -->
+        </div>
+      </div>
+    </section>
 
-let last = data.sessions[data.sessions.length - 1];
+    <section class="card">
+      <div class="section-header">
+        <h2>Storico sessioni</h2>
+        <div class="muted small">Filtra e ordina per verificare coerenza e risultati nel tempo.</div>
+      </div>
 
-document.getElementById('date').innerText = "Date: " + last.date;
-document.getElementById('decision').innerHTML =
-"Decision: <span class='" +
-(last.decision === "LONG" ? "green" : "red") +
-"'>" + last.decision + "</span>";
+      <div class="filters">
+        <label class="field">
+          <span>Direzione</span>
+          <select id="filterDirection">
+            <option value="ALL">Tutte</option>
+            <option value="LONG">LONG</option>
+            <option value="SHORT">SHORT</option>
+          </select>
+        </label>
 
-document.getElementById('mae').innerText = "MAE 5m: " + last.mae5m + " pts";
-document.getElementById('mfe').innerText = "MFE 10m: " + last.mfe10m + " pts";
+        <label class="field">
+          <span>stopHit</span>
+          <select id="filterStopHit">
+            <option value="ALL">Tutti</option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </label>
 
-});
-</script>
+        <label class="field">
+          <span>QualityScore ≥</span>
+          <input id="filterQS" type="number" min="0" max="100" step="1" value="0" />
+        </label>
 
+        <label class="field grow">
+          <span>Cerca (strumento / note / id)</span>
+          <input id="filterSearch" type="search" placeholder="Es: NASDAQ, VWAP, 2026-03-02..." />
+        </label>
+
+        <button class="btn" id="btnReset">Reset</button>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Tabella storico sessioni" tabindex="0">
+        <table class="table" id="sessionsTable">
+          <thead>
+            <tr>
+              <th data-sort="timestampISO">Data/Ora</th>
+              <th data-sort="direction">Dir</th>
+              <th>Strumento</th>
+              <th>TF</th>
+              <th class="num" data-sort="entryPrice">Entry</th>
+              <th class="num" data-sort="exitPrice">Exit</th>
+              <th class="num">Stop</th>
+              <th class="num">Target</th>
+              <th class="num" data-sort="durationMin">Dur</th>
+              <th class="num" data-sort="pnlPoints">PnL (pt)</th>
+              <th class="num" data-sort="maePoints">MAE</th>
+              <th class="num" data-sort="mfePoints">MFE</th>
+              <th data-sort="stopHit">stopHit</th>
+              <th class="num" data-sort="qualityScore">QS</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="sessionsTbody">
+            <!-- injected -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footnote" id="coherenceNote">
+        <!-- injected -->
+      </div>
+    </section>
+
+    <section class="two-col">
+      <section class="card">
+        <h2>Come leggere questi dati</h2>
+        <ul class="list">
+          <li><strong>PnL (pt)</strong>: risultato in punti (positivo/negativo).</li>
+          <li><strong>MAE</strong>: massimo movimento contro (adverse) in punti durante la sessione.</li>
+          <li><strong>MFE</strong>: massimo movimento a favore (favorable) in punti durante la sessione.</li>
+          <li><strong>Dur</strong>: durata in minuti.</li>
+          <li><strong>stopHit</strong>: true se lo stop è stato toccato/eseguito.</li>
+          <li><strong>Entry/Exit</strong>: prezzi per verifica su grafico all’orario indicato.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Definizioni & regole</h2>
+        <div class="muted small" id="rulesBox">
+          <!-- injected -->
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer muted small">
+      Dati caricati da <code>data.json</code> • Nessun backend • GitHub Pages compatible
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
