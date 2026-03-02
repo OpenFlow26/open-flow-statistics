@@ -1,17 +1,72 @@
 {
-  "currentVersion": "V1.0",
-  "lastUpdated": "2026-03-02 16:40 CET",
+  "meta": {
+    "productName": "Nasdaq CFD Protocol Dashboard",
+    "modelVersion": "v1.0.0",
+    "timezone": "Europe/Rome",
+    "lastUpdatedISO": "2026-03-02T13:10:00+01:00",
+    "rules": {
+      "pointsDefinition": "PnL (pt) = (exit - entry) * segno direzione",
+      "maeDefinition": "Massimo movimento contro in punti durante il trade",
+      "mfeDefinition": "Massimo movimento a favore in punti durante il trade",
+      "qualityScoreScale": "0-100 (interno al modello)",
+      "stopHitMeaning": "true se lo stop è stato toccato/eseguito"
+    }
+  },
   "sessions": [
     {
-      "date": "2026-03-02",
-      "version": "V1.0",
-      "decision": "LONG",
-      "qualityScore": 3,
-      "stopPts": 50,
-      "mae5m": 35,
-      "mfe10m": 242,
-      "biasCorrect": true,
-      "stopHit": false
+      "id": "2026-03-02_1529_01",
+      "timestampISO": "2026-03-02T15:29:30+01:00",
+      "direction": "LONG",
+      "instrument": "NASDAQ CFD",
+      "timeframe": "1m",
+      "entryPrice": 21420.0,
+      "exitPrice": 21500.0,
+      "stopPrice": 21380.0,
+      "targetPrice": 21510.0,
+      "durationMin": 16,
+      "pnlPoints": 80,
+      "maePoints": -22,
+      "mfePoints": 92,
+      "stopHit": false,
+      "qualityScore": 78,
+      "note": "Entrata vicino apertura, verifica semplice su grafico.",
+      "assets": { "screenshotUrl": "" }
+    },
+    {
+      "id": "2026-03-01_1529_01",
+      "timestampISO": "2026-03-01T15:29:30+01:00",
+      "direction": "SHORT",
+      "instrument": "NASDAQ CFD",
+      "timeframe": "1m",
+      "entryPrice": 21380.0,
+      "exitPrice": 21340.0,
+      "stopPrice": 21420.0,
+      "targetPrice": 21320.0,
+      "durationMin": 9,
+      "pnlPoints": 40,
+      "maePoints": -18,
+      "mfePoints": 55,
+      "stopHit": false,
+      "qualityScore": 71,
+      "note": "Short su pullback, uscita parziale vicino target."
+    },
+    {
+      "id": "2026-02-28_1529_01",
+      "timestampISO": "2026-02-28T15:29:30+01:00",
+      "direction": "LONG",
+      "instrument": "NASDAQ CFD",
+      "timeframe": "1m",
+      "entryPrice": 21290.0,
+      "exitPrice": 21260.0,
+      "stopPrice": 21260.0,
+      "targetPrice": 21360.0,
+      "durationMin": 6,
+      "pnlPoints": -30,
+      "maePoints": -35,
+      "mfePoints": 12,
+      "stopHit": true,
+      "qualityScore": 42,
+      "note": "Stop hit."
     }
   ]
 }
