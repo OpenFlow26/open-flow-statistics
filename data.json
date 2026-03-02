@@ -1,0 +1,17 @@
+{
+  "currentVersion": "V1.0",
+  "lastUpdated": "2026-03-02 16:40 CET",
+  "sessions": [
+    {
+      "date": "2026-03-02",
+      "version": "V1.0",
+      "decision": "LONG",
+      "qualityScore": 3,
+      "stopPts": 50,
+      "mae5m": 35,
+      "mfe10m": 242,
+      "biasCorrect": true,
+      "stopHit": false
+    }
+  ]
+}
