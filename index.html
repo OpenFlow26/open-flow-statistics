@@ -137,7 +137,7 @@
               <th>Uscita</th>
               <th>MAE</th>
               <th>P/L (pt)</th>
-              <th>Win Rate</th>
+              <th>RR</th>
               <th>Esito</th>
             </tr>
           </thead>
@@ -186,7 +186,12 @@ function parseCSV(text) {
     }
     vals.push(current.trim());
     const row = {};
-    headers.forEach((h, i) => { row[h] = vals[i] || ''; });
+    headers.forEach((h, i) => { 
+      let key = h;
+      if (key === 'p/l') key = 'pl';
+      if (key === 'win rate') key = 'rr';
+      row[key] = vals[i] || ''; 
+    });
     return row;
   }).filter(r => r.data && r.data.length > 0);
 }
@@ -315,14 +320,11 @@ function render(sessions) {
   tbody.innerHTML = '';
   const reversed = [...sessions].reverse();
   reversed.forEach((s, ri) => {
-    const origIndex = sessions.length - 1 - ri;
-    const subset = sessions.slice(0, origIndex + 1);
-    const subWins = subset.filter(x => x.esito && x.esito.toUpperCase() === 'WIN').length;
-    const runWr = ((subWins / subset.length) * 100).toFixed(1);
     const pl = parseFloat(s.pl);
     const plClass = isNaN(pl) ? 'pl-na' : (pl >= 0 ? 'pl-pos' : 'pl-neg');
     const plText = isNaN(pl) ? '—' : `${pl >= 0 ? '+' : ''}${pl}`;
     const maeText = s.mae ? `-${s.mae}` : '—';
+    const rrText = s.rr || '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="entry-val">${formatDate(s.data)}</td>
@@ -332,7 +334,7 @@ function render(sessions) {
       <td class="entry-val">${s.uscita || '—'}</td>
       <td class="mae-val">${maeText}</td>
       <td class="${plClass}">${plText}</td>
-      <td class="wr">${runWr}%</td>
+      <td class="wr">${rrText}</td>
       <td><span class="${getBadgeClass(s.esito)}">${(s.esito || '').toUpperCase()}</span></td>
     `;
     tbody.appendChild(tr);
