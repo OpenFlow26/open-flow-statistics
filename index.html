@@ -1,148 +1,423 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="color-scheme" content="dark light" />
-  <title>Session Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Flow — Trading System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #F6F8FA; font-family: 'DM Sans', sans-serif; color: #1A2B3C; }
+
+    /* Header */
+    .header { background: #fff; border-bottom: 1px solid #E8ECF1; padding: 20px 0; }
+    .header-inner { max-width: 960px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 22px; font-weight: 700; color: #1A2B3C; font-family: 'Fraunces', serif; letter-spacing: -0.02em; }
+    .logo span { color: #2E7D6F; }
+    .subtitle { font-size: 13px; color: #8896A6; margin-top: 2px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #2E7D6F; animation: pulse 2s infinite; }
+    .live-label { font-size: 12px; color: #8896A6; font-weight: 500; }
+    .live { display: flex; align-items: center; gap: 8px; }
+
+    /* Container */
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+    /* Stats */
+    .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 32px; }
+    .stat-card { background: #fff; border-radius: 12px; padding: 24px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #E8ECF1; min-width: 140px; flex: 1; }
+    .stat-label { font-size: 12px; font-weight: 600; color: #8896A6; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 700; font-family: 'Fraunces', serif; line-height: 1; }
+    .stat-sub { font-size: 12px; color: #8896A6; margin-top: 6px; }
+
+    /* Chart */
+    .chart-card { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #E8ECF1; margin-bottom: 32px; }
+    .chart-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+    /* Disclaimer */
+    .disclaimer { background: #FFFDE7; border: 1px solid #FFF9C4; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 12px; color: #827717; line-height: 1.5; }
+
+    /* Table */
+    .table-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #E8ECF1; overflow: hidden; }
+    .table-header { padding: 16px 20px; border-bottom: 1px solid #E8ECF1; display: flex; justify-content: space-between; align-items: center; }
+    .table-title { font-size: 15px; font-weight: 700; }
+    .table-date { font-size: 12px; color: #8896A6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: #F8FAFB; }
+    th { padding: 12px 14px; text-align: left; font-weight: 600; color: #8896A6; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid #E8ECF1; white-space: nowrap; }
+    td { padding: 12px 14px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #F0F2F5; }
+    tbody tr:nth-child(even) { background: #FCFCFD; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+    .badge-win { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+    .badge-loss { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+    .badge-be { background: #FFF8E1; color: #F57F17; border: 1px solid #FFECB3; }
+    .badge-long { background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; }
+    .badge-short { background: #FCE4EC; color: #AD1457; border: 1px solid #F8BBD0; }
+
+    .pl-pos { font-weight: 600; color: #2E7D32; }
+    .pl-neg { font-weight: 600; color: #C62828; }
+    .pl-na { color: #8896A6; }
+    .wr { font-weight: 600; color: #2E7D6F; }
+    .mae-val { color: #C62828; }
+    .stop-val { color: #8896A6; }
+    .entry-val { font-weight: 500; }
+
+    /* Footer */
+    .footer { text-align: center; padding: 32px 0 16px; font-size: 12px; color: #B0B8C4; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 60px 20px; color: #8896A6; font-size: 14px; }
+
+    /* Error */
+    .error-box { background: #FFEBEE; border: 1px solid #FFCDD2; border-radius: 8px; padding: 16px; margin-bottom: 24px; color: #C62828; font-size: 13px; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    @media (max-width: 600px) {
+      .stat-value { font-size: 24px; }
+      .stats-row { gap: 10px; }
+      .stat-card { padding: 16px 14px; min-width: 100px; }
+      td, th { padding: 10px 8px; font-size: 12px; }
+    }
+  </style>
 </head>
 <body>
-  <a class="skip-link" href="#main">Salta al contenuto</a>
 
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo"></div>
+  <div class="header">
+    <div class="header-inner">
       <div>
-        <div class="brand-title">Open Flow</div>
-        <div class="brand-subtitle">Live Execution Transparency Engine</div>
+        <div class="logo">Open<span> Flow</span></div>
+        <div class="subtitle">Trading System — Risultati verificabili in tempo reale</div>
+      </div>
+      <div class="live">
+        <div class="live-dot"></div>
+        <span class="live-label">Live</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Sessioni</div>
+        <div class="stat-value" id="stat-sessions">—</div>
+        <div class="stat-sub" id="stat-wl">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="stat-winrate" style="color:#2E7D6F;">—</div>
       </div>
     </div>
 
-    <div class="meta" id="metaBar" aria-live="polite">
-      <!-- injected -->
+    <div class="chart-card">
+      <div class="chart-title">Equity Curve (P/L cumulativo in punti)</div>
+      <svg id="equity-chart" width="100%" viewBox="0 0 800 200" style="display:block;"></svg>
     </div>
-  </header>
 
-  <main id="main" class="container">
-    <section class="hero">
-      <div class="hero-left">
-        <h1>Trasparenza in 10 secondi</h1>
-        <p class="muted">
-          Ogni sessione mostra <strong>data/ora (timezone)</strong>, <strong>LONG/SHORT</strong>,
-          <strong>entry/exit</strong>, stop/target e metriche (PnL, MAE/MFE).
-          Se vuoi, puoi controllare sul grafico.
-        </p>
+    <div class="disclaimer">
+      Tutti i risultati sono verificabili confrontando i prezzi di entrata e uscita con il grafico. Le performance passate non garantiscono risultati futuri.
+    </div>
 
-        <div class="kpis" id="kpis">
-          <!-- injected -->
-        </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Storico Sessioni</div>
+        <div class="table-date" id="last-update">—</div>
       </div>
-
-      <div class="hero-right">
-        <div class="card spotlight" id="lastSessionCard" aria-live="polite">
-          <!-- injected -->
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-header">
-        <h2>Storico sessioni</h2>
-        <div class="muted small">Filtra e ordina per verificare coerenza e risultati nel tempo.</div>
-      </div>
-
-      <div class="filters">
-        <label class="field">
-          <span>Direzione</span>
-          <select id="filterDirection">
-            <option value="ALL">Tutte</option>
-            <option value="LONG">LONG</option>
-            <option value="SHORT">SHORT</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>stopHit</span>
-          <select id="filterStopHit">
-            <option value="ALL">Tutti</option>
-            <option value="true">true</option>
-            <option value="false">false</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>QualityScore ≥</span>
-          <input id="filterQS" type="number" min="0" max="100" step="1" value="0" />
-        </label>
-
-        <label class="field grow">
-          <span>Cerca (strumento / note / id)</span>
-          <input id="filterSearch" type="search" placeholder="Es: NASDAQ, VWAP, 2026-03-02..." />
-        </label>
-
-        <button class="btn" id="btnReset">Reset</button>
-      </div>
-
-      <div class="table-wrap" role="region" aria-label="Tabella storico sessioni" tabindex="0">
-        <table class="table" id="sessionsTable">
+      <div class="table-wrap">
+        <table>
           <thead>
             <tr>
-              <th data-sort="timestampISO">Data/Ora</th>
-              <th data-sort="direction">Dir</th>
-              <th>Strumento</th>
-              <th>TF</th>
-              <th class="num" data-sort="entryPrice">Entry</th>
-              <th class="num" data-sort="exitPrice">Exit</th>
-              <th class="num">Stop</th>
-              <th class="num">Target</th>
-              <th class="num" data-sort="durationMin">Dur</th>
-              <th class="num" data-sort="pnlPoints">PnL (pt)</th>
-              <th class="num" data-sort="maePoints">MAE</th>
-              <th class="num" data-sort="mfePoints">MFE</th>
-              <th data-sort="stopHit">stopHit</th>
-              <th class="num" data-sort="qualityScore">QS</th>
-              <th>Link</th>
+              <th>Data</th>
+              <th>Direzione</th>
+              <th>Entrata</th>
+              <th>Stop</th>
+              <th>Uscita</th>
+              <th>MAE</th>
+              <th>P/L (pt)</th>
+              <th>Win Rate</th>
+              <th>Esito</th>
             </tr>
           </thead>
-          <tbody id="sessionsTbody">
-            <!-- injected -->
+          <tbody id="sessions-body">
+            <tr><td colspan="9" class="loading">Caricamento dati...</td></tr>
           </tbody>
         </table>
       </div>
+    </div>
 
-      <div class="footnote" id="coherenceNote">
-        <!-- injected -->
-      </div>
-    </section>
+    <div class="footer">Open Flow Trading System</div>
+  </div>
 
-    <section class="two-col">
-      <section class="card">
-        <h2>Come leggere questi dati</h2>
-        <ul class="list">
-          <li><strong>PnL (pt)</strong>: risultato in punti (positivo/negativo).</li>
-          <li><strong>MAE</strong>: massimo movimento contro (adverse) in punti durante la sessione.</li>
-          <li><strong>MFE</strong>: massimo movimento a favore (favorable) in punti durante la sessione.</li>
-          <li><strong>Dur</strong>: durata in minuti.</li>
-          <li><strong>stopHit</strong>: true se lo stop è stato toccato/eseguito.</li>
-          <li><strong>Entry/Exit</strong>: prezzi per verifica su grafico all’orario indicato.</li>
-        </ul>
-      </section>
+  <div id="error-container" class="container" style="display:none;">
+    <div class="error-box" id="error-msg"></div>
+  </div>
 
-      <section class="card">
-        <h2>Definizioni & regole</h2>
-        <div class="muted small" id="rulesBox">
-          <!-- injected -->
-        </div>
-      </section>
-    </section>
+<script>
+// =============================================
+// CONFIGURAZIONE — INSERISCI QUI IL TUO LINK
+// =============================================
+// 1. Vai su Google Sheets → File → Condividi → Pubblica sul web
+// 2. Seleziona "Foglio 1" e formato "CSV"
+// 3. Copia il link e incollalo qui sotto
+const SHEET_CSV_URL = 'INSERISCI_QUI_IL_LINK_CSV_DEL_TUO_GOOGLE_SHEET';
 
-    <footer class="footer muted small">
-      Dati caricati da <code>data.json</code> • Nessun backend • GitHub Pages compatible
-    </footer>
-  </main>
+// Colonne attese nel foglio (prima riga):
+// Data | Bias | Entrata | Stop | Uscita | MAE | PL | Esito
+// =============================================
 
-  <script src="app.js"></script>
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim());
+    const row = {};
+    headers.forEach((h, i) => { row[h] = vals[i] || ''; });
+    return row;
+  }).filter(r => r.data && r.data.length > 0);
+}
+
+function formatDate(dateStr) {
+  try {
+    // Gestisce sia DD/MM/YYYY che YYYY-MM-DD
+    let d;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      d = new Date(parts[2], parts[1] - 1, parts[0]);
+    } else {
+      d = new Date(dateStr);
+    }
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDateShort(dateStr) {
+  try {
+    let d;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      d = new Date(parts[2], parts[1] - 1, parts[0]);
+    } else {
+      d = new Date(dateStr);
+    }
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function getBadgeClass(type) {
+  const t = type.toUpperCase();
+  if (t === 'WIN') return 'badge badge-win';
+  if (t === 'LOSS') return 'badge badge-loss';
+  if (t === 'BE') return 'badge badge-be';
+  if (t === 'LONG') return 'badge badge-long';
+  if (t === 'SHORT') return 'badge badge-short';
+  return 'badge';
+}
+
+function drawEquityCurve(sessions) {
+  const svg = document.getElementById('equity-chart');
+  svg.innerHTML = '';
+  const valid = sessions.filter(s => s.pl !== '' && !isNaN(parseFloat(s.pl)));
+  if (valid.length < 1) {
+    svg.innerHTML = '<text x="400" y="100" text-anchor="middle" font-size="13" fill="#8896A6" font-family="DM Sans, sans-serif">Inserisci i dati P/L nel foglio per vedere il grafico</text>';
+    return;
+  }
+
+  let cum = 0;
+  const pts = [{ x: 0, y: 0 }];
+  valid.forEach((s, i) => { cum += parseFloat(s.pl); pts.push({ x: i + 1, y: cum }); });
+
+  const maxY = Math.max(...pts.map(p => p.y), 0);
+  const minY = Math.min(...pts.map(p => p.y), 0);
+  const range = maxY - minY || 1;
+  const w = 800, h = 200, pL = 60, pR = 40, pT = 20, pB = 40;
+  const cW = w - pL - pR, cH = h - pT - pB;
+  const gx = (i) => pL + (i / Math.max(pts.length - 1, 1)) * cW;
+  const gy = (v) => pT + cH - ((v - minY) / range) * cH;
+
+  // Gradient
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = '<linearGradient id="eqg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E7D6F" stop-opacity="0.12"/><stop offset="100%" stop-color="#2E7D6F" stop-opacity="0"/></linearGradient>';
+  svg.appendChild(defs);
+
+  // Grid
+  const gl = 4, step = range / gl;
+  for (let i = 0; i <= gl; i++) {
+    const val = minY + step * i;
+    const y = gy(val);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', pL); line.setAttribute('y1', y);
+    line.setAttribute('x2', w - pR); line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#E8ECF1'); line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pL - 8); text.setAttribute('y', y + 4);
+    text.setAttribute('text-anchor', 'end'); text.setAttribute('font-size', '10');
+    text.setAttribute('fill', '#8896A6'); text.setAttribute('font-family', 'DM Sans, sans-serif');
+    text.textContent = Math.round(val);
+    svg.appendChild(text);
+  }
+
+  // Zero line
+  if (minY < 0) {
+    const zl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    zl.setAttribute('x1', pL); zl.setAttribute('y1', gy(0));
+    zl.setAttribute('x2', w - pR); zl.setAttribute('y2', gy(0));
+    zl.setAttribute('stroke', '#CCC'); zl.setAttribute('stroke-width', '1');
+    zl.setAttribute('stroke-dasharray', '4,4');
+    svg.appendChild(zl);
+  }
+
+  // Path data
+  const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${gx(p.x)},${gy(p.y)}`).join(' ');
+  const zeroY = Math.min(Math.max(gy(0), pT), pT + cH);
+  const areaD = lineD + ` L${gx(pts[pts.length - 1].x)},${zeroY} L${gx(0)},${zeroY} Z`;
+
+  // Area
+  const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  areaPath.setAttribute('d', areaD); areaPath.setAttribute('fill', 'url(#eqg)');
+  svg.appendChild(areaPath);
+
+  // Line
+  const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  linePath.setAttribute('d', lineD); linePath.setAttribute('fill', 'none');
+  linePath.setAttribute('stroke', '#2E7D6F'); linePath.setAttribute('stroke-width', '2.5');
+  linePath.setAttribute('stroke-linejoin', 'round'); linePath.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(linePath);
+
+  // Dots
+  pts.slice(1).forEach((p) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', gx(p.x)); c.setAttribute('cy', gy(p.y));
+    c.setAttribute('r', '4'); c.setAttribute('fill', '#fff');
+    c.setAttribute('stroke', '#2E7D6F'); c.setAttribute('stroke-width', '2');
+    svg.appendChild(c);
+  });
+
+  // X labels
+  valid.forEach((s, i) => {
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', gx(i + 1)); t.setAttribute('y', h - 8);
+    t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9');
+    t.setAttribute('fill', '#8896A6'); t.setAttribute('font-family', 'DM Sans, sans-serif');
+    t.textContent = formatDateShort(s.data);
+    svg.appendChild(t);
+  });
+
+  // Last value
+  if (pts.length > 1) {
+    const last = pts[pts.length - 1];
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', gx(last.x) + 8); t.setAttribute('y', gy(last.y) + 4);
+    t.setAttribute('font-size', '12'); t.setAttribute('font-weight', '700');
+    t.setAttribute('fill', '#2E7D6F'); t.setAttribute('font-family', 'Fraunces, serif');
+    t.textContent = `${last.y >= 0 ? '+' : ''}${Math.round(last.y)} pt`;
+    svg.appendChild(t);
+  }
+}
+
+function render(sessions) {
+  // Stats
+  const wins = sessions.filter(s => s.esito && s.esito.toUpperCase() === 'WIN').length;
+  const losses = sessions.filter(s => s.esito && s.esito.toUpperCase() === 'LOSS').length;
+  const total = sessions.length;
+  const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('stat-sessions').textContent = total;
+  document.getElementById('stat-wl').textContent = `${wins}W / ${losses}L`;
+  document.getElementById('stat-winrate').textContent = `${wr}%`;
+
+  if (sessions.length > 0) {
+    document.getElementById('last-update').textContent = `Aggiornato al ${formatDate(sessions[sessions.length - 1].data)}`;
+  }
+
+  // Equity curve
+  drawEquityCurve(sessions);
+
+  // Table
+  const tbody = document.getElementById('sessions-body');
+  tbody.innerHTML = '';
+
+  // Reversed for display (newest first)
+  const reversed = [...sessions].reverse();
+  reversed.forEach((s, ri) => {
+    const origIndex = sessions.length - 1 - ri;
+    // Running win rate up to this session (original order)
+    const subset = sessions.slice(0, origIndex + 1);
+    const subWins = subset.filter(x => x.esito && x.esito.toUpperCase() === 'WIN').length;
+    const runWr = ((subWins / subset.length) * 100).toFixed(1);
+
+    const pl = parseFloat(s.pl);
+    const plClass = isNaN(pl) ? 'pl-na' : (pl >= 0 ? 'pl-pos' : 'pl-neg');
+    const plText = isNaN(pl) ? '—' : `${pl >= 0 ? '+' : ''}${pl}`;
+    const maeText = s.mae ? `-${s.mae}` : '—';
+    const biasClass = getBadgeClass(s.bias || '');
+    const esitoClass = getBadgeClass(s.esito || '');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="entry-val">${formatDate(s.data)}</td>
+      <td><span class="${biasClass}">${(s.bias || '').toUpperCase()}</span></td>
+      <td class="entry-val">${s.entrata || '—'}</td>
+      <td class="stop-val">${s.stop || '—'}</td>
+      <td class="entry-val">${s.uscita || '—'}</td>
+      <td class="mae-val">${maeText}</td>
+      <td class="${plClass}">${plText}</td>
+      <td class="wr">${runWr}%</td>
+      <td><span class="${esitoClass}">${(s.esito || '').toUpperCase()}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function showError(msg) {
+  document.getElementById('error-container').style.display = 'block';
+  document.getElementById('error-msg').textContent = msg;
+}
+
+async function loadData() {
+  if (SHEET_CSV_URL === 'INSERISCI_QUI_IL_LINK_CSV_DEL_TUO_GOOGLE_SHEET') {
+    // Demo mode con dati di esempio
+    render([
+      { data: '2026-03-02', bias: 'LONG', entrata: '24596', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
+      { data: '2026-03-03', bias: 'LONG', entrata: '24485', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
+    ]);
+    return;
+  }
+
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) throw new Error(`Errore HTTP: ${res.status}`);
+    const text = await res.text();
+    const sessions = parseCSV(text);
+    if (sessions.length === 0) {
+      showError('Nessuna sessione trovata nel foglio. Verifica che le colonne siano: Data, Bias, Entrata, Stop, Uscita, MAE, PL, Esito');
+      return;
+    }
+    render(sessions);
+  } catch (err) {
+    showError(`Errore nel caricamento dei dati: ${err.message}. Verifica che il link del Google Sheet sia corretto e pubblicato.`);
+    // Mostra dati demo
+    render([
+      { data: '2026-03-02', bias: 'LONG', entrata: '24596', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
+      { data: '2026-03-03', bias: 'LONG', entrata: '24485', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
+    ]);
+  }
+}
+
+// Carica all'avvio
+loadData();
+
+// Ricarica ogni 5 minuti
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+
 </body>
 </html>
