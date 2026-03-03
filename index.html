@@ -157,23 +157,34 @@
 
 <script>
 // =============================================
-// CONFIGURAZIONE — INSERISCI QUI IL TUO LINK
+// CONFIGURAZIONE
 // =============================================
-// 1. Vai su Google Sheets → File → Condividi → Pubblica sul web
-// 2. Seleziona "Foglio 1" e formato "CSV"
-// 3. Copia il link e incollalo qui sotto
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRSMpVqf32wIcmha6LvP3hhkdHzLu5KdOpKM5gejPbds6wE5KzTZIdxzkr6z5t-U7XqhCqUEiCBmB_H/pub?gid=0&single=true&output=csv';
+// ID del tuo Google Sheet (estratto dal link di pubblicazione)
+const SHEET_ID = '2PACX-1vRSMpVqf32wIcmha6LvP3hhkdHzLu5KdOpKM5gejPbds6wE5KzTZIdxzkr6z5t-U7XqhCqUEiCBmB_H';
 
-// Colonne attese nel foglio (prima riga):
-// Data | Bias | Entrata | Stop | Uscita | MAE | PL | Esito
+// URL per leggere i dati (usa gviz che supporta CORS)
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Foglio1`;
+
+// Colonne attese: Data | Bias | Entrata | Stop | Uscita | MAE | PL | Esito
 // =============================================
 
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  // Rimuovi virgolette dai valori
+  const clean = (v) => v.replace(/^"|"$/g, '').trim();
+  const headers = lines[0].split(',').map(h => clean(h).toLowerCase());
   return lines.slice(1).map(line => {
-    const vals = line.split(',').map(v => v.trim());
+    // Gestisci CSV con virgolette
+    const vals = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQuotes = !inQuotes; }
+      else if (line[i] === ',' && !inQuotes) { vals.push(current.trim()); current = ''; }
+      else { current += line[i]; }
+    }
+    vals.push(current.trim());
     const row = {};
     headers.forEach((h, i) => { row[h] = vals[i] || ''; });
     return row;
@@ -182,7 +193,6 @@ function parseCSV(text) {
 
 function formatDate(dateStr) {
   try {
-    // Gestisce sia DD/MM/YYYY che YYYY-MM-DD
     let d;
     if (dateStr.includes('/')) {
       const parts = dateStr.split('/');
@@ -190,10 +200,9 @@ function formatDate(dateStr) {
     } else {
       d = new Date(dateStr);
     }
+    if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
+  } catch { return dateStr; }
 }
 
 function formatDateShort(dateStr) {
@@ -205,14 +214,13 @@ function formatDateShort(dateStr) {
     } else {
       d = new Date(dateStr);
     }
+    if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
-  } catch {
-    return dateStr;
-  }
+  } catch { return dateStr; }
 }
 
 function getBadgeClass(type) {
-  const t = type.toUpperCase();
+  const t = (type || '').toUpperCase();
   if (t === 'WIN') return 'badge badge-win';
   if (t === 'LOSS') return 'badge badge-loss';
   if (t === 'BE') return 'badge badge-be';
@@ -229,11 +237,9 @@ function drawEquityCurve(sessions) {
     svg.innerHTML = '<text x="400" y="100" text-anchor="middle" font-size="13" fill="#8896A6" font-family="DM Sans, sans-serif">Inserisci i dati P/L nel foglio per vedere il grafico</text>';
     return;
   }
-
   let cum = 0;
   const pts = [{ x: 0, y: 0 }];
   valid.forEach((s, i) => { cum += parseFloat(s.pl); pts.push({ x: i + 1, y: cum }); });
-
   const maxY = Math.max(...pts.map(p => p.y), 0);
   const minY = Math.min(...pts.map(p => p.y), 0);
   const range = maxY - minY || 1;
@@ -241,137 +247,93 @@ function drawEquityCurve(sessions) {
   const cW = w - pL - pR, cH = h - pT - pB;
   const gx = (i) => pL + (i / Math.max(pts.length - 1, 1)) * cW;
   const gy = (v) => pT + cH - ((v - minY) / range) * cH;
-
-  // Gradient
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   defs.innerHTML = '<linearGradient id="eqg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E7D6F" stop-opacity="0.12"/><stop offset="100%" stop-color="#2E7D6F" stop-opacity="0"/></linearGradient>';
   svg.appendChild(defs);
-
-  // Grid
   const gl = 4, step = range / gl;
   for (let i = 0; i <= gl; i++) {
-    const val = minY + step * i;
-    const y = gy(val);
+    const val = minY + step * i, y = gy(val);
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', pL); line.setAttribute('y1', y);
-    line.setAttribute('x2', w - pR); line.setAttribute('y2', y);
+    line.setAttribute('x1', pL); line.setAttribute('y1', y); line.setAttribute('x2', w - pR); line.setAttribute('y2', y);
     line.setAttribute('stroke', '#E8ECF1'); line.setAttribute('stroke-width', '1');
     svg.appendChild(line);
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', pL - 8); text.setAttribute('y', y + 4);
-    text.setAttribute('text-anchor', 'end'); text.setAttribute('font-size', '10');
-    text.setAttribute('fill', '#8896A6'); text.setAttribute('font-family', 'DM Sans, sans-serif');
-    text.textContent = Math.round(val);
-    svg.appendChild(text);
+    text.setAttribute('x', pL - 8); text.setAttribute('y', y + 4); text.setAttribute('text-anchor', 'end');
+    text.setAttribute('font-size', '10'); text.setAttribute('fill', '#8896A6'); text.setAttribute('font-family', 'DM Sans, sans-serif');
+    text.textContent = Math.round(val); svg.appendChild(text);
   }
-
-  // Zero line
   if (minY < 0) {
     const zl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    zl.setAttribute('x1', pL); zl.setAttribute('y1', gy(0));
-    zl.setAttribute('x2', w - pR); zl.setAttribute('y2', gy(0));
-    zl.setAttribute('stroke', '#CCC'); zl.setAttribute('stroke-width', '1');
-    zl.setAttribute('stroke-dasharray', '4,4');
+    zl.setAttribute('x1', pL); zl.setAttribute('y1', gy(0)); zl.setAttribute('x2', w - pR); zl.setAttribute('y2', gy(0));
+    zl.setAttribute('stroke', '#CCC'); zl.setAttribute('stroke-width', '1'); zl.setAttribute('stroke-dasharray', '4,4');
     svg.appendChild(zl);
   }
-
-  // Path data
   const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${gx(p.x)},${gy(p.y)}`).join(' ');
   const zeroY = Math.min(Math.max(gy(0), pT), pT + cH);
   const areaD = lineD + ` L${gx(pts[pts.length - 1].x)},${zeroY} L${gx(0)},${zeroY} Z`;
-
-  // Area
   const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  areaPath.setAttribute('d', areaD); areaPath.setAttribute('fill', 'url(#eqg)');
-  svg.appendChild(areaPath);
-
-  // Line
+  areaPath.setAttribute('d', areaD); areaPath.setAttribute('fill', 'url(#eqg)'); svg.appendChild(areaPath);
   const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  linePath.setAttribute('d', lineD); linePath.setAttribute('fill', 'none');
-  linePath.setAttribute('stroke', '#2E7D6F'); linePath.setAttribute('stroke-width', '2.5');
-  linePath.setAttribute('stroke-linejoin', 'round'); linePath.setAttribute('stroke-linecap', 'round');
+  linePath.setAttribute('d', lineD); linePath.setAttribute('fill', 'none'); linePath.setAttribute('stroke', '#2E7D6F');
+  linePath.setAttribute('stroke-width', '2.5'); linePath.setAttribute('stroke-linejoin', 'round'); linePath.setAttribute('stroke-linecap', 'round');
   svg.appendChild(linePath);
-
-  // Dots
   pts.slice(1).forEach((p) => {
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', gx(p.x)); c.setAttribute('cy', gy(p.y));
-    c.setAttribute('r', '4'); c.setAttribute('fill', '#fff');
-    c.setAttribute('stroke', '#2E7D6F'); c.setAttribute('stroke-width', '2');
+    c.setAttribute('cx', gx(p.x)); c.setAttribute('cy', gy(p.y)); c.setAttribute('r', '4');
+    c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#2E7D6F'); c.setAttribute('stroke-width', '2');
     svg.appendChild(c);
   });
-
-  // X labels
   valid.forEach((s, i) => {
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', gx(i + 1)); t.setAttribute('y', h - 8);
-    t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9');
-    t.setAttribute('fill', '#8896A6'); t.setAttribute('font-family', 'DM Sans, sans-serif');
-    t.textContent = formatDateShort(s.data);
-    svg.appendChild(t);
+    t.setAttribute('x', gx(i + 1)); t.setAttribute('y', h - 8); t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '9'); t.setAttribute('fill', '#8896A6'); t.setAttribute('font-family', 'DM Sans, sans-serif');
+    t.textContent = formatDateShort(s.data); svg.appendChild(t);
   });
-
-  // Last value
   if (pts.length > 1) {
     const last = pts[pts.length - 1];
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', gx(last.x) + 8); t.setAttribute('y', gy(last.y) + 4);
     t.setAttribute('font-size', '12'); t.setAttribute('font-weight', '700');
     t.setAttribute('fill', '#2E7D6F'); t.setAttribute('font-family', 'Fraunces, serif');
-    t.textContent = `${last.y >= 0 ? '+' : ''}${Math.round(last.y)} pt`;
-    svg.appendChild(t);
+    t.textContent = `${last.y >= 0 ? '+' : ''}${Math.round(last.y)} pt`; svg.appendChild(t);
   }
 }
 
 function render(sessions) {
-  // Stats
   const wins = sessions.filter(s => s.esito && s.esito.toUpperCase() === 'WIN').length;
   const losses = sessions.filter(s => s.esito && s.esito.toUpperCase() === 'LOSS').length;
   const total = sessions.length;
   const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
-
   document.getElementById('stat-sessions').textContent = total;
   document.getElementById('stat-wl').textContent = `${wins}W / ${losses}L`;
   document.getElementById('stat-winrate').textContent = `${wr}%`;
-
   if (sessions.length > 0) {
     document.getElementById('last-update').textContent = `Aggiornato al ${formatDate(sessions[sessions.length - 1].data)}`;
   }
-
-  // Equity curve
   drawEquityCurve(sessions);
-
-  // Table
   const tbody = document.getElementById('sessions-body');
   tbody.innerHTML = '';
-
-  // Reversed for display (newest first)
   const reversed = [...sessions].reverse();
   reversed.forEach((s, ri) => {
     const origIndex = sessions.length - 1 - ri;
-    // Running win rate up to this session (original order)
     const subset = sessions.slice(0, origIndex + 1);
     const subWins = subset.filter(x => x.esito && x.esito.toUpperCase() === 'WIN').length;
     const runWr = ((subWins / subset.length) * 100).toFixed(1);
-
     const pl = parseFloat(s.pl);
     const plClass = isNaN(pl) ? 'pl-na' : (pl >= 0 ? 'pl-pos' : 'pl-neg');
     const plText = isNaN(pl) ? '—' : `${pl >= 0 ? '+' : ''}${pl}`;
     const maeText = s.mae ? `-${s.mae}` : '—';
-    const biasClass = getBadgeClass(s.bias || '');
-    const esitoClass = getBadgeClass(s.esito || '');
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="entry-val">${formatDate(s.data)}</td>
-      <td><span class="${biasClass}">${(s.bias || '').toUpperCase()}</span></td>
+      <td><span class="${getBadgeClass(s.bias)}">${(s.bias || '').toUpperCase()}</span></td>
       <td class="entry-val">${s.entrata || '—'}</td>
       <td class="stop-val">${s.stop || '—'}</td>
       <td class="entry-val">${s.uscita || '—'}</td>
       <td class="mae-val">${maeText}</td>
       <td class="${plClass}">${plText}</td>
       <td class="wr">${runWr}%</td>
-      <td><span class="${esitoClass}">${(s.esito || '').toUpperCase()}</span></td>
+      <td><span class="${getBadgeClass(s.esito)}">${(s.esito || '').toUpperCase()}</span></td>
     `;
     tbody.appendChild(tr);
   });
@@ -383,39 +345,30 @@ function showError(msg) {
 }
 
 async function loadData() {
-  if (SHEET_CSV_URL === 'INSERISCI_QUI_IL_LINK_CSV_DEL_TUO_GOOGLE_SHEET') {
-    // Demo mode con dati di esempio
-    render([
-      { data: '2026-03-02', bias: 'LONG', entrata: '24596', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
-      { data: '2026-03-03', bias: 'LONG', entrata: '24485', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
-    ]);
-    return;
-  }
-
   try {
-    const res = await fetch(SHEET_CSV_URL);
-    if (!res.ok) throw new Error(`Errore HTTP: ${res.status}`);
+    // Prova gviz (supporta CORS)
+    let res = await fetch(SHEET_URL);
+    if (!res.ok) {
+      // Fallback: prova il link CSV diretto
+      const csvUrl = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
+      res = await fetch(csvUrl);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const sessions = parseCSV(text);
     if (sessions.length === 0) {
-      showError('Nessuna sessione trovata nel foglio. Verifica che le colonne siano: Data, Bias, Entrata, Stop, Uscita, MAE, PL, Esito');
+      showError('Nessuna sessione trovata. Verifica le intestazioni: Data, Bias, Entrata, Stop, Uscita, MAE, PL, Esito');
       return;
     }
+    // Nascondi errore se c'era
+    document.getElementById('error-container').style.display = 'none';
     render(sessions);
   } catch (err) {
-    showError(`Errore nel caricamento dei dati: ${err.message}. Verifica che il link del Google Sheet sia corretto e pubblicato.`);
-    // Mostra dati demo
-    render([
-      { data: '2026-03-02', bias: 'LONG', entrata: '24596', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
-      { data: '2026-03-03', bias: 'LONG', entrata: '24485', stop: '', uscita: '', mae: '', pl: '', esito: 'WIN' },
-    ]);
+    showError(`Errore nel caricamento: ${err.message}`);
   }
 }
 
-// Carica all'avvio
 loadData();
-
-// Ricarica ogni 5 minuti
 setInterval(loadData, 5 * 60 * 1000);
 </script>
 
